@@ -1,0 +1,115 @@
+def m2 = move;move end
+def m4 = m2;m2 end
+def m8 = m4;m4 end
+def m16 = m8;m8 end
+def m32 = m16;m16 end
+
+def n = north end
+def s = south end
+def w = west end
+def e = east end
+
+def t = turn end
+
+def k = selfdestruct end
+
+def xor  : bool -> bool -> bool = \p.\q. not (p == q)  end
+def or   : bool -> bool -> bool = \p.\q. if p p q      end
+def and  : bool -> bool -> bool = \p.\q. if p q p      end
+def nor  : bool -> bool -> bool = \p.\q. not (or  p q) end
+def nand : bool -> bool -> bool = \p.\q. not (and p q) end
+
+def repeat : forall a. int -> cmd a -> cmd () = \x.\c.
+
+   if (x > 0)
+      { c;repeat (x-1) c }
+      { {} }
+
+end
+
+def m : int -> cmd () = \x.
+
+   repeat x move
+
+end
+
+def abs : int -> int = \x.
+
+   if (x < 0) (-x) x
+
+end
+
+def opposite : dir -> dir = \d.
+
+   if (d == north) south {
+   if (d == south) north {
+   if (d == west) east {
+   if (d == east) west {
+   if (d == right) left {
+   if (d == left) right {
+   if (d == forward) back {
+   if (d == back) forward {
+      back
+   }}}}}}}}
+
+end
+
+def home : cmd () =
+
+   x <- getX;
+   y <- getY;
+
+   let dx : dir = if (x > 0) {west} {east} in
+   let dy : dir = if (y > 0) {south} {north} in
+
+   t dy;m (abs y);t dx;m (abs x);
+
+end
+
+def find : dir -> string -> cmd () = \d.\r.
+
+   t d;
+
+   b <- blocked;
+   f <- ishere r;
+
+   if f {
+      grab;home;give "base" r;k
+      }{
+      if b {
+         k
+         }{
+         m 1;find d r
+      }
+   }
+
+end
+
+def findr : string -> dir -> int -> cmd () = \r.\d.\i.
+
+   if (or (d == n) (d == s)) {
+      build "r" { t d;repeat i { m 1;build "r" { find w r };build "r" { find e r } };k };
+   }{
+      build "r" { t d;repeat i { m 1;build "r" { find n r };build "r" { find s r } };k };
+   };
+
+   return ()
+
+end
+
+def fetch : int -> int -> cmd string = \x.\y.
+
+   let dx : dir = if (x > 0) {east} {west} in
+   let dy : dir = if (y > 0) {north} {south} in
+
+   b <- build "fetcher" {
+      turn dx;m (abs x);turn dy;m (abs y);
+      r <- grab;
+      home;
+      b <- blocked;
+      if b { k } { give "base" r;k }
+   };
+
+   return b
+
+end
